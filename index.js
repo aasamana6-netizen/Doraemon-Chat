@@ -3,8 +3,8 @@ const fetch = require('node-fetch');
 const app = express();
 const PORT = process.env.PORT || 1000;
 
-// CORS manual - funciona mejor en Render
-app.use(function(req, res, next) {
+// Configuración manual de CORS
+app.use((req, res, next) => {
   const allowedOrigins = [
     'https://doraemon-chat-84c5f.web.app',
     'https://doraemon-chat-84c5f.firebaseapp.com',
@@ -14,9 +14,12 @@ app.use(function(req, res, next) {
   if (allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  res.header("Access-Control-Allow-Credentials", true);
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
   next();
 });
 
@@ -26,7 +29,7 @@ const API_KEY = process.env.API_KEY;
 
 app.post('/chat', async (req, res) => {
   const prompt = req.body.prompt;
-  const url = `https://generativelanguage.googleapis.com/v1beta2/models/gemini-pro:generateContent?key=${API_KEY}`;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta2/models/gemini-pro:generateContent?key=${API_KEY}`;
   const body = {
     prompt: { text: prompt },
     temperature: 0.7,
@@ -34,26 +37,27 @@ app.post('/chat', async (req, res) => {
   };
 
   try {
-    const resp = await fetch(url, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    const data = await resp.json();
+    const data = await response.json();
 
-    if (!resp.ok) {
-      let errorMessage = 'API error';
-      if (data.error && data.error.message) {
-        errorMessage = data.error.message;
-      }
-      return res.status(400).json({ error: errorMessage });
+    if (!response.ok) {
+      const errorMsg = data.error && data.error.message
+        ? data.error.message
+        : 'API error';
+      return res.status(400).json({ error: errorMsg });
     }
 
-    let answer = "No response.";
+    let answer = 'No response.';
     if (
       data.candidates &&
+      Array.isArray(data.candidates) &&
       data.candidates.length > 0 &&
       data.candidates[0].content &&
+      Array.isArray(data.candidates[0].content) &&
       data.candidates[0].content.length > 0 &&
       data.candidates[0].content[0].text
     ) {
@@ -66,4 +70,7 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log('Servidor listo en puerto ' + PORT));
+app.listen(PORT, () => {
+  console.log(`Servidor listo en puerto ${PORT}`);
+});
+
