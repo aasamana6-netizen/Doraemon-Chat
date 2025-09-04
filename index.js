@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 const app = express();
 const PORT = process.env.PORT || 1000;
 
-// CORS manual
+// Configuración manual de CORS
 app.use((req, res, next) => {
   const allowedOrigins = [
     'https://doraemon-chat-84c5f.web.app',
@@ -33,7 +33,8 @@ app.post('/chat', async (req, res) => {
   const body = {
     prompt: { text: prompt },
     temperature: 0.7,
-    maxOutputTokens: 256
+    maxOutputTokens: 256,
+    response_mime_type: 'application/json'  // Solicita JSON puro
   };
 
   try {
@@ -43,12 +44,13 @@ app.post('/chat', async (req, res) => {
       body: JSON.stringify(body)
     });
 
+    // Leer la respuesta como texto y luego parsear
     const text = await response.text();
     let data;
     try {
       data = JSON.parse(text);
     } catch (e) {
-      console.error('Error parsing JSON from API:', text);
+      console.error('Respuesta no JSON de la API:', text);
       return res.status(500).json({ error: 'Invalid response from AI API' });
     }
 
@@ -59,14 +61,13 @@ app.post('/chat', async (req, res) => {
       return res.status(response.status).json({ error: errorMsg });
     }
 
+    // Extraer el texto de la respuesta
     let answer = 'No response.';
     if (
       data.candidates &&
       Array.isArray(data.candidates) &&
-      data.candidates.length > 0 &&
       data.candidates[0].content &&
       Array.isArray(data.candidates[0].content) &&
-      data.candidates[0].content.length > 0 &&
       data.candidates[0].content[0].text
     ) {
       answer = data.candidates[0].content[0].text.trim();
