@@ -32,6 +32,7 @@ app.post('/chat', async (req, res) => {
     temperature: 0.7,
     maxOutputTokens: 256
   };
+
   try {
     const resp = await fetch(url, {
       method: 'POST',
@@ -39,6 +40,7 @@ app.post('/chat', async (req, res) => {
       body: JSON.stringify(body)
     });
     const data = await resp.json();
+
     if (!resp.ok) {
       let errorMessage = 'API error';
       if (data.error && data.error.message) {
@@ -46,7 +48,7 @@ app.post('/chat', async (req, res) => {
       }
       return res.status(400).json({ error: errorMessage });
     }
-    
+
     let answer = "No response.";
     if (
       data.candidates &&
@@ -57,7 +59,7 @@ app.post('/chat', async (req, res) => {
     ) {
       answer = data.candidates[0].content[0].text.trim();
     }
-    
+
     res.json({ response: answer });
   } catch (e) {
     res.status(500).json({ error: e.message });
