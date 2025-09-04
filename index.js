@@ -2,9 +2,15 @@ const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 1000;
 
-app.use(cors());
+// Habilita CORS para tu web de Firebase (más seguro)
+app.use(cors({
+  origin: 'https://doraemon-chat-84c5f.web.app',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
+
 app.use(express.json());
 
 const API_KEY = process.env.API_KEY;
@@ -35,3 +41,4 @@ app.post('/chat', async (req, res) => {
 });
 
 app.listen(PORT, () => console.log('Servidor listo en puerto ' + PORT));
+
