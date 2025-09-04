@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 const app = express();
 const PORT = process.env.PORT || 1000;
 
-// Configuración manual de CORS
+// Configuración manual de CORS para evitar errores
 app.use((req, res, next) => {
   const allowedOrigins = [
     'https://doraemon-chat-84c5f.web.app',
@@ -34,34 +34,36 @@ app.post('/chat', async (req, res) => {
     prompt: { text: prompt },
     temperature: 0.7,
     maxOutputTokens: 256,
-    response_mime_type: 'application/json'  // Solicita JSON puro
+    response_mime_type: 'application/json'  // Forzar respuesta JSON
   };
 
   try {
+    // Realiza la petición al API de Gemini
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
 
-    // Leer la respuesta como texto y luego parsear
+    // Lee la respuesta como texto para detectar posibles errores
     const text = await response.text();
     let data;
     try {
       data = JSON.parse(text);
     } catch (e) {
-      console.error('Respuesta no JSON de la API:', text);
-      return res.status(500).json({ error: 'Invalid response from AI API' });
+      console.error('Respuesta no JSON válida de la API:', text);
+      return res.status(500).json({ error: 'Respuesta inválida de la API de IA' });
     }
 
+    // Si la respuesta HTTP no es OK, envía el error de la API
     if (!response.ok) {
       const errorMsg = data.error && data.error.message
         ? data.error.message
-        : 'API error';
+        : 'Error en la API de IA';
       return res.status(response.status).json({ error: errorMsg });
     }
 
-    // Extraer el texto de la respuesta
+    // Extrae el texto de la respuesta para enviar a frontend
     let answer = 'No response.';
     if (
       data.candidates &&
@@ -74,8 +76,9 @@ app.post('/chat', async (req, res) => {
     }
 
     res.json({ response: answer });
+
   } catch (e) {
-    console.error('Fetch error:', e);
+    console.error('Error en la petición fetch:', e);
     res.status(500).json({ error: e.message });
   }
 });
