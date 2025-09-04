@@ -40,9 +40,24 @@ app.post('/chat', async (req, res) => {
     });
     const data = await resp.json();
     if (!resp.ok) {
-      return res.status(400).json({ error: data.error?.message || 'API error' });
+      let errorMessage = 'API error';
+      if (data.error && data.error.message) {
+        errorMessage = data.error.message;
+      }
+      return res.status(400).json({ error: errorMessage });
     }
-    const answer = data.candidates?.?.content?.?.text?.trim() || "No response.";
+    
+    let answer = "No response.";
+    if (
+      data.candidates &&
+      data.candidates.length > 0 &&
+      data.candidates[0].content &&
+      data.candidates[0].content.length > 0 &&
+      data.candidates[0].content[0].text
+    ) {
+      answer = data.candidates[0].content[0].text.trim();
+    }
+    
     res.json({ response: answer });
   } catch (e) {
     res.status(500).json({ error: e.message });
