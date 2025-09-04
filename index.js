@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 const app = express();
 const PORT = process.env.PORT || 1000;
 
-// Configuración manual de CORS
+// CORS manual
 app.use((req, res, next) => {
   const allowedOrigins = [
     'https://doraemon-chat-84c5f.web.app',
@@ -42,13 +42,21 @@ app.post('/chat', async (req, res) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    const data = await response.json();
+
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error('Error parsing JSON from API:', text);
+      return res.status(500).json({ error: 'Invalid response from AI API' });
+    }
 
     if (!response.ok) {
       const errorMsg = data.error && data.error.message
         ? data.error.message
         : 'API error';
-      return res.status(400).json({ error: errorMsg });
+      return res.status(response.status).json({ error: errorMsg });
     }
 
     let answer = 'No response.';
@@ -66,6 +74,7 @@ app.post('/chat', async (req, res) => {
 
     res.json({ response: answer });
   } catch (e) {
+    console.error('Fetch error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -73,4 +82,3 @@ app.post('/chat', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor listo en puerto ${PORT}`);
 });
-
