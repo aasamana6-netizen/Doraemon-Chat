@@ -1,15 +1,24 @@
 const express = require('express');
 const fetch = require('node-fetch');
-const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 1000;
 
-// Habilita CORS para tu web de Firebase (más seguro)
-app.use(cors({
-  origin: 'https://doraemon-chat-84c5f.web.app',
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type']
-}));
+// CORS manual - funciona mejor en Render
+app.use(function(req, res, next) {
+  const allowedOrigins = [
+    'https://doraemon-chat-84c5f.web.app',
+    'https://doraemon-chat-84c5f.firebaseapp.com',
+    'http://localhost:3000'
+  ];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Credentials", true);
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  next();
+});
 
 app.use(express.json());
 
@@ -33,7 +42,7 @@ app.post('/chat', async (req, res) => {
     if (!resp.ok) {
       return res.status(400).json({ error: data.error?.message || 'API error' });
     }
-    const answer = data.candidates?.[0]?.content?.[0]?.text?.trim() || "No response.";
+    const answer = data.candidates?.?.content?.?.text?.trim() || "No response.";
     res.json({ response: answer });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -41,4 +50,3 @@ app.post('/chat', async (req, res) => {
 });
 
 app.listen(PORT, () => console.log('Servidor listo en puerto ' + PORT));
-
