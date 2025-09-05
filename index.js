@@ -1,9 +1,10 @@
 const express = require('express');
 const fetch = require('node-fetch');
 const app = express();
+
 const PORT = process.env.PORT || 1000;
 
-// Configuración manual de CORS para evitar errores
+// Configuración manual de CORS para evitar errores desde frontend
 app.use((req, res, next) => {
   const allowedOrigins = [
     'https://doraemon-chat-84c5f.web.app',
@@ -25,27 +26,27 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = process.env.TOKEN; // Variable entorno TOKEN con Hugging Face Key
 
 app.post('/chat', async (req, res) => {
   const prompt = req.body.prompt;
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta2/models/gemini-pro:generateContent?key=${API_KEY}`;
-  const body = {
-    prompt: { text: prompt },
-    temperature: 0.7,
-    maxOutputTokens: 256,
-    response_mime_type: 'application/json'  // Forzar respuesta JSON
-  };
+  if (!prompt) {
+    return res.status(400).json({ error: 'No prompt provided' });
+  }
+
+  const apiUrl = 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2';
 
   try {
-    // Realiza la petición al API de Gemini
     const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ inputs: prompt })
     });
 
-    // Lee la respuesta como texto para detectar posibles errores
+    // Leer la respuesta como texto para manejar errores abiertos
     const text = await response.text();
     let data;
     try {
@@ -55,7 +56,7 @@ app.post('/chat', async (req, res) => {
       return res.status(500).json({ error: 'Respuesta inválida de la API de IA' });
     }
 
-    // Si la respuesta HTTP no es OK, envía el error de la API
+    // Si la respuesta HTTP no es OK, manda el error de la API
     if (!response.ok) {
       const errorMsg = data.error && data.error.message
         ? data.error.message
@@ -63,18 +64,8 @@ app.post('/chat', async (req, res) => {
       return res.status(response.status).json({ error: errorMsg });
     }
 
-    // Extrae el texto de la respuesta para enviar a frontend
-    let answer = 'No response.';
-    if (
-      data.candidates &&
-      Array.isArray(data.candidates) &&
-      data.candidates[0].content &&
-      Array.isArray(data.candidates[0].content) &&
-      data.candidates[0].content[0].text
-    ) {
-      answer = data.candidates[0].content[0].text.trim();
-    }
-
+    // El texto generado viene en data[0].generated_text
+    let answer = (data[0] && data[0].generated_text) ? data[0].generated_text.trim() : 'No se recibió respuesta válida.';
     res.json({ response: answer });
 
   } catch (e) {
