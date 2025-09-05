@@ -11,7 +11,7 @@ app.use(cors({
     'https://doraemon-chat-84c5f.firebaseapp.com',
     'http://localhost:5000'
   ],
-  methods: ['GET', 'POST']
+  methods: ['GET', 'POST'],
 }));
 app.use(bodyParser.json());
 
@@ -38,7 +38,7 @@ app.post('/chat', async (req, res) => {
       messages: [{ role: "user", content: mensajeUsuario }]
     });
 
-    const respuestaIA = completion.choices[0].message.content;
+    const respuestaIA = completion.choices.message.content;
     res.json({ respuesta: respuestaIA });
 
   } catch (error) {
