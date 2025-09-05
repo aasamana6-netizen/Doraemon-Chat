@@ -20,7 +20,7 @@ const openai = new OpenAI({
   apiKey: process.env.TOKEN
 });
 
-const modeloIA = "mistralai/Mistral-7B-Instruct-v0.2";
+const modeloIA = "tiiuae/falcon-7b-instruct";
 
 app.get('/', (req, res) => {
   res.send('Doraemon IA backend activo 🚀');
