@@ -18,9 +18,9 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
-// Configura el cliente OpenAI Hugging Face con tu token
+// Configura el cliente OpenAI Hugging Face con variable TOKEN
 const openai = new OpenAI({
-  apiKey: process.env.TOKEN_HUGGINGFACE  // token guardado como variable de entorno en Render
+  apiKey: process.env.TOKEN  // usa tu variable TOKEN en Render
 });
 
 app.get('/', (req, res) => {
