@@ -1,7 +1,7 @@
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const { OpenAI } = require('openai');
+import express from 'express';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import { OpenAI } from 'openai';
 
 const app = express();
 
