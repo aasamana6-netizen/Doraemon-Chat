@@ -5,7 +5,6 @@ const { OpenAI } = require('openai');
 
 const app = express();
 
-// Configura CORS para tu web Firebase y local
 app.use(cors({
   origin: [
     'https://doraemon-chat-84c5f.web.app',
@@ -16,14 +15,12 @@ app.use(cors({
 }));
 app.use(bodyParser.json());
 
-// ⚡ CONFIGURA TU TOKEN DE HUGGING FACE AQUÍ
 const openai = new OpenAI({
   baseURL: "https://router.huggingface.co/v1",
-  apiKey: process.env.TOKEN    // La variable TOKEN en Render debe ser tu token hf_...
+  apiKey: process.env.TOKEN
 });
 
-// Puedes cambiar el modelo/editando esta variable:
-const modeloIA = "mistralai/Mistral-7B-Instruct-v0.2"; // Cambia aquí el modelo si lo necesitas
+const modeloIA = "mistralai/Mistral-7B-Instruct-v0.2";
 
 app.get('/', (req, res) => {
   res.send('Doraemon IA backend activo 🚀');
@@ -33,20 +30,36 @@ app.post('/chat', async (req, res) => {
   try {
     const mensajeUsuario = req.body.mensaje;
     if (!mensajeUsuario) {
-      return res.status(400).json({ error: 'Falta el mensaje en la petición.' });
+      return res.status(400).json({ error: 'Error: Falta el mensaje en la petición.' });
     }
-    // Llamada a Hugging Face Inference API con el modelo indicado
+
     const completion = await openai.chat.completions.create({
       model: modeloIA,
       messages: [{ role: "user", content: mensajeUsuario }]
     });
 
+    if (!completion || !completion.choices || completion.choices.length === 0) {
+      return res.status(500).json({ error: 'Error: La IA no generó respuesta.' });
+    }
+
     const respuestaIA = completion.choices[0].message.content;
     res.json({ respuesta: respuestaIA });
 
   } catch (error) {
-    console.error('Error en /chat:', error.message);
-    res.status(500).json({ error: error.message || "Lo siento, no puedo responder ahora." });
+    console.error('Error en /chat:', error);
+
+    // Mensajes personalizados según tipo de error
+    if (error.message.includes('401')) {
+      return res.status(401).json({ error: 'Error 401: Token inválido o sin permisos de inferencia.' });
+    } else if (error.message.includes('404')) {
+      return res.status(404).json({ error: 'Error 404: Modelo no encontrado o incorrecto.' });
+    } else if (error.message.includes('422')) {
+      return res.status(422).json({ error: 'Error 422: Petición mal formulada o inválida.' });
+    } else if (error.message.includes('ECONNREFUSED')) {
+      return res.status(503).json({ error: 'Error: No se pudo conectar con el servicio de inferencia.' });
+    } else {
+      return res.status(500).json({ error: 'Error inesperado: ' + error.message });
+    }
   }
 });
 
