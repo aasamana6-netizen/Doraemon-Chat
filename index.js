@@ -11,16 +11,16 @@ app.use(cors({
     'https://doraemon-chat-84c5f.firebaseapp.com',
     'http://localhost:5000'
   ],
-  methods: ['GET', 'POST']
+  methods: ['GET', 'POST'],
 }));
 app.use(bodyParser.json());
 
 const openai = new OpenAI({
   baseURL: "https://api-inference.huggingface.co",
-  apiKey: process.env.TOKEN
+  apiKey: process.env.TOKEN,
 });
 
-// ESTE ES EL MODELO QUE SÍ FUNCIONA CON CHAT COMPLETIONS
+// Usa un modelo compatible para chat completions
 const modeloIA = "microsoft/DialoGPT-medium";
 
 app.get('/', (req, res) => {
@@ -31,7 +31,7 @@ app.post('/chat', async (req, res) => {
   try {
     const mensajeUsuario = req.body.mensaje;
     if (!mensajeUsuario) {
-      return res.json({ respuesta: "Debes escribir un mensaje antes de enviar." });
+      return res.status(400).json({ error: 'Falta el mensaje.' });
     }
 
     const completion = await openai.chat.completions.create({
@@ -40,12 +40,12 @@ app.post('/chat', async (req, res) => {
       max_tokens: 150
     });
 
-    const respuestaIA = completion.choices?.message?.content;
-    res.json({ respuesta: respuestaIA || "No se obtuvo respuesta de la IA, intenta más tarde." });
+    const respuestaIA = completion.choices[0]?.message?.content;
+    res.json({ respuesta: respuestaIA || "No se obtuvo respuesta de la IA." });
 
   } catch (error) {
-    console.error('Error completo:', error);
-    res.json({ respuesta: "Error en la IA: " + (error.message || "desconocido") });
+    console.error('Error backend:', error);
+    res.status(500).json({ respuesta: "Error en la IA: " + (error.message || "desconocido") });
   }
 });
 
