@@ -3,42 +3,41 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { OpenAI } = require('openai');
 
-// Inicializa Express
 const app = express();
 
-// Configura CORS para permitir peticiones desde Firebase Hosting y local
+// Configura CORS para tu web Firebase y local
 app.use(cors({
   origin: [
     'https://doraemon-chat-84c5f.web.app',
     'https://doraemon-chat-84c5f.firebaseapp.com',
     'http://localhost:5000'
   ],
-  methods: ['GET', 'POST']
+  methods: ['GET', 'POST'],
 }));
-
 app.use(bodyParser.json());
 
-// Inicializa cliente OpenAI con tu token de entorno TOKEN
+// ⚡ CONFIGURA TU TOKEN DE HUGGING FACE AQUÍ
 const openai = new OpenAI({
-  apiKey: process.env.TOKEN
+  baseURL: "https://router.huggingface.co/v1",
+  apiKey: process.env.TOKEN    // La variable TOKEN en Render debe ser tu token hf_...
 });
 
-// Endpoint raíz para comprobar backend activo
+// Puedes cambiar el modelo/editando esta variable:
+const modeloIA = "mistralai/Mistral-7B-Instruct-v0.2"; // Cambia aquí el modelo si lo necesitas
+
 app.get('/', (req, res) => {
   res.send('Doraemon IA backend activo 🚀');
 });
 
-// Endpoint POST /chat que usa IA para generar respuesta
 app.post('/chat', async (req, res) => {
   try {
     const mensajeUsuario = req.body.mensaje;
     if (!mensajeUsuario) {
       return res.status(400).json({ error: 'Falta el mensaje en la petición.' });
     }
-
-    // Llamada a Hugging Face Mistral
+    // Llamada a Hugging Face Inference API con el modelo indicado
     const completion = await openai.chat.completions.create({
-      model: "mistralai/Mistral-7B-Instruct-v0.2:featherless-ai",
+      model: modeloIA,
       messages: [{ role: "user", content: mensajeUsuario }]
     });
 
@@ -46,13 +45,11 @@ app.post('/chat', async (req, res) => {
     res.json({ respuesta: respuestaIA });
 
   } catch (error) {
-    console.error('Error en /chat:', error);
-    // Envía el error real al frontend para depurar
+    console.error('Error en /chat:', error.message);
     res.status(500).json({ error: error.message || "Lo siento, no puedo responder ahora." });
   }
 });
 
-// Puerto para Render (o 1000 local)
 const PORT = process.env.PORT || 1000;
 app.listen(PORT, () => {
   console.log(`Servidor Doraemon backend escuchando en puerto ${PORT}`);
