@@ -1,18 +1,17 @@
 {
-  "name": "nodejs",
+  "name": "doraemon-ia-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Backend para chat IA con Mistral y Hugging Face",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@types/node": "^22.13.11",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "node-fetch": "^2.7.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
