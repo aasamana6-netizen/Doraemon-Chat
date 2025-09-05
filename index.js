@@ -38,28 +38,21 @@ app.post('/chat', async (req, res) => {
       messages: [{ role: "user", content: mensajeUsuario }]
     });
 
-    if (!completion || !completion.choices || completion.choices.length === 0) {
-      return res.status(500).json({ error: 'Error: La IA no generó respuesta.' });
-    }
-
     const respuestaIA = completion.choices[0].message.content;
     res.json({ respuesta: respuestaIA });
 
   } catch (error) {
-    console.error('Error en /chat:', error);
-
-    // Mensajes personalizados según tipo de error
+    let mensajePersonalizado = 'Error inesperado.';
     if (error.message.includes('401')) {
-      return res.status(401).json({ error: 'Error 401: Token inválido o sin permisos de inferencia.' });
+      mensajePersonalizado = 'Token inválido o sin permisos de inferencia.';
     } else if (error.message.includes('404')) {
-      return res.status(404).json({ error: 'Error 404: Modelo no encontrado o incorrecto.' });
+      mensajePersonalizado = 'Modelo no encontrado o incorrecto.';
     } else if (error.message.includes('422')) {
-      return res.status(422).json({ error: 'Error 422: Petición mal formulada o inválida.' });
+      mensajePersonalizado = 'Petición mal formulada o inválida.';
     } else if (error.message.includes('ECONNREFUSED')) {
-      return res.status(503).json({ error: 'Error: No se pudo conectar con el servicio de inferencia.' });
-    } else {
-      return res.status(500).json({ error: 'Error inesperado: ' + error.message });
+      mensajePersonalizado = 'No se pudo conectar con el servicio de inferencia.';
     }
+    res.json({ error: mensajePersonalizado });
   }
 });
 
