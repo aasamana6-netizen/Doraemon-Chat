@@ -1,11 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const { OpenAI } = require('openai');
 
 // Inicializa Express
 const app = express();
 
-// Configuración de CORS para tu web en Firebase Hosting y desarrollo local
+// Configuración CORS para tu frontend Firebase
 app.use(cors({
   origin: [
     'https://doraemon-chat-84c5f.web.app',
@@ -17,25 +18,32 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
-// Endpoint raíz para comprobar el estado del backend
+// Configura el cliente OpenAI Hugging Face con tu token
+const openai = new OpenAI({
+  apiKey: process.env.TOKEN_HUGGINGFACE  // token guardado como variable de entorno en Render
+});
+
 app.get('/', (req, res) => {
   res.send('Doraemon IA backend activo 🚀');
 });
 
-// Endpoint POST de la IA
 app.post('/chat', async (req, res) => {
   try {
-    console.log('Mensaje recibido:', req.body); // Log para depuración
+    const mensajeUsuario = req.body.mensaje;
+    if (!mensajeUsuario) throw new Error('Falta mensaje');
 
-    // Aquí va tu llamada a Hugging Face/Mistral usando fetch, axios, etc.
-    // Simulación de respuesta (reemplaza con tu lógica IA):
-    const mensajeUsuario = req.body.mensaje || '¿Cuál es la capital de Francia?';
-    const respuestaIA = `Respuesta simulada a: ${mensajeUsuario}`;
-    
+    // Llamada a Hugging Face Mistral con chat completions
+    const completion = await openai.chat.completions.create({
+      model: "mistralai/Mistral-7B-Instruct-v0.2:featherless-ai",
+      messages: [{ role: "user", content: mensajeUsuario }]
+    });
+
+    const respuestaIA = completion.choices[0].message.content;
+
     res.json({ respuesta: respuestaIA });
   } catch (error) {
     console.error('Error en /chat:', error);
-    res.status(500).json({ error: 'Error interno del backend.' });
+    res.json({ error: "Lo siento, no puedo responder ahora." });
   }
 });
 
