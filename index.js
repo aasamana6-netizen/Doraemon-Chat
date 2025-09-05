@@ -11,7 +11,7 @@ app.use(cors({
     'https://doraemon-chat-84c5f.firebaseapp.com',
     'http://localhost:5000'
   ],
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST']
 }));
 app.use(bodyParser.json());
 
