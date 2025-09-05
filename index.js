@@ -38,7 +38,7 @@ app.post('/chat', async (req, res) => {
       messages: [{ role: "user", content: mensajeUsuario }]
     });
 
-    const respuestaIA = completion.choices.message.content;
+    const respuestaIA = completion.choices[0].message.content;
     res.json({ respuesta: respuestaIA });
 
   } catch (error) {
