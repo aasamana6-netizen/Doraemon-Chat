@@ -30,7 +30,10 @@ app.post('/chat', async (req, res) => {
   try {
     const mensajeUsuario = req.body.mensaje;
     if (!mensajeUsuario) {
-      return res.status(400).json({ error: 'Error: Falta el mensaje en la petición.' });
+      return res.json({
+        respuesta: "⚠️ Debes escribir un mensaje antes de enviar.",
+        error_code: 400
+      });
     }
 
     const completion = await openai.chat.completions.create({
@@ -38,21 +41,42 @@ app.post('/chat', async (req, res) => {
       messages: [{ role: "user", content: mensajeUsuario }]
     });
 
-    const respuestaIA = completion.choices[0].message.content;
-    res.json({ respuesta: respuestaIA });
+    const respuestaIA = completion.choices?.message?.content;
+    if (!respuestaIA) {
+      return res.json({
+        respuesta: "⚠️ No se pudo generar respuesta de la IA. Puede que el modelo esté saturado o hay un formato incorrecto.",
+        error_code: 500
+      });
+    }
+
+    res.json({ respuesta: respuestaIA, error_code: 0 });
 
   } catch (error) {
-    let mensajePersonalizado = 'Error inesperado.';
-    if (error.message.includes('401')) {
-      mensajePersonalizado = 'Token inválido o sin permisos de inferencia.';
-    } else if (error.message.includes('404')) {
-      mensajePersonalizado = 'Modelo no encontrado o incorrecto.';
-    } else if (error.message.includes('422')) {
-      mensajePersonalizado = 'Petición mal formulada o inválida.';
-    } else if (error.message.includes('ECONNREFUSED')) {
-      mensajePersonalizado = 'No se pudo conectar con el servicio de inferencia.';
+    let mensajePersonalizado = "⚠️ Error desconocido, intenta más tarde.";
+    // Personalización según lo detecte el error/código
+    if (error.message?.includes('401')) {
+      mensajePersonalizado = "⛔ Token inválido o sin permisos de inferencia (401 Unauthorized).";
+    } else if (error.message?.includes('404')) {
+      mensajePersonalizado = "⛔ Modelo no encontrado o incorrecto (404 Not Found).";
+    } else if (error.message?.includes('422')) {
+      mensajePersonalizado = "⛔ Petición mal formulada o parámetros inválidos (422 Unprocessable Entity).";
+    } else if (error.message?.includes('429')) {
+      mensajePersonalizado = "⏳ Se ha superado el límite de peticiones o cuota en Hugging Face (429 Too Many Requests).";
+    } else if (error.message?.includes('quota')) {
+      mensajePersonalizado = "⏳ Límite de uso de la API alcanzado o plan gratuito bloqueado.";
+    } else if (error.message?.includes('ECONNREFUSED')) {
+      mensajePersonalizado = "⚡ No se pudo conectar con el servicio de inferencia. Verifica tu conexión o estado del backend.";
+    } else if (error.message?.includes('input')) {
+      mensajePersonalizado = "⚠️ Formato de entrada inválido, revisa el mensaje enviado.";
+    } else if (error.message?.includes('Unauthorized')) {
+      mensajePersonalizado = "⛔ Acceso no autorizado a Hugging Face. Revisa tu token y permisos.";
     }
-    res.json({ error: mensajePersonalizado });
+
+    // Devolvemos siempre respuesta personalizada para mostrarla en el frontend
+    res.json({
+      respuesta: mensajePersonalizado,
+      error_code: 500
+    });
   }
 });
 
