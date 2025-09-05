@@ -11,37 +11,40 @@ app.use(cors({
     'https://doraemon-chat-84c5f.firebaseapp.com',
     'http://localhost:5000'
   ],
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST']
 }));
 app.use(bodyParser.json());
 
 const openai = new OpenAI({
-  baseURL: "https://router.huggingface.co/v1",
+  baseURL: "https://api-inference.huggingface.co",
   apiKey: process.env.TOKEN
 });
 
-const modeloIA = "tiiuae/falcon-7b-instruct";
+// ESTE ES EL MODELO QUE SÍ FUNCIONA CON CHAT COMPLETIONS
+const modeloIA = "microsoft/DialoGPT-medium";
 
 app.get('/', (req, res) => {
   res.send('Doraemon IA backend activo 🚀');
 });
 
 app.post('/chat', async (req, res) => {
-  const mensajeUsuario = req.body.mensaje;
-  if (!mensajeUsuario) {
-    // RESPONDE SIEMPRE aunque falte mensaje
-    return res.json({ respuesta: "Debes escribir un mensaje antes de enviar." });
-  }
   try {
+    const mensajeUsuario = req.body.mensaje;
+    if (!mensajeUsuario) {
+      return res.json({ respuesta: "Debes escribir un mensaje antes de enviar." });
+    }
+
     const completion = await openai.chat.completions.create({
       model: modeloIA,
-      messages: [{ role: "user", content: mensajeUsuario }]
+      messages: [{ role: "user", content: mensajeUsuario }],
+      max_tokens: 150
     });
-    const respuestaIA = completion.choices[0]?.message?.content;
-    // RESPONDE SIEMPRE aunque completion no tenga respuesta
+
+    const respuestaIA = completion.choices?.message?.content;
     res.json({ respuesta: respuestaIA || "No se obtuvo respuesta de la IA, intenta más tarde." });
+
   } catch (error) {
-    // RESPONDE SIEMPRE aunque haya error (HuggingFace, token, modelo, etc.)
+    console.error('Error completo:', error);
     res.json({ respuesta: "Error en la IA: " + (error.message || "desconocido") });
   }
 });
