@@ -3,17 +3,17 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 // Inicializa Express
-const app = express();
+const cors = require('cors');
 
-// Configuración de CORS para Firebase Hosting y local
 app.use(cors({
   origin: [
-    'https://TU-PROYECTO.web.app',
-    'https://TU-PROYECTO.firebaseapp.com',
+    'https://doraemon-chat-84c5f.web.app',
+    'https://doraemon-chat-84c5f.firebaseapp.com',
     'http://localhost:5000'
   ],
   methods: ['GET', 'POST']
 }));
+
 
 app.use(bodyParser.json());
 
